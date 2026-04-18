@@ -1,0 +1,253 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GSE & Vitamin C Calculator</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    padding: 20px;
+    margin: 0;
+  }
+  .container {
+    max-width: 760px;
+    margin: auto;
+    background: #fff;
+    padding: 24px;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  }
+  h1 {
+    margin-top: 0;
+    text-align: center;
+    font-size: 28px;
+  }
+  p.sub {
+    text-align: center;
+    color: #666;
+    margin-bottom: 24px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .full {
+    grid-column: 1 / -1;
+  }
+  label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+  input, select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  button {
+    width: 100%;
+    padding: 12px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  button:hover {
+    background: #0056b3;
+  }
+  .result {
+    margin-top: 18px;
+    padding: 14px;
+    background: #fafafa;
+    border: 1px solid #e9e9e9;
+    border-radius: 10px;
+  }
+  .result h3 {
+    margin-top: 0;
+  }
+  ul {
+    margin-bottom: 0;
+  }
+  .muted {
+    color: #666;
+    font-size: 14px;
+  }
+  @media (max-width: 700px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>GSE &amp; VITAMIN C CALCULATOR</h1>
+  <p class="sub">Grape Seed Extract calculates at 200mg per kilo. Vitamin C calculates at 50mg per kilo.</p>
+
+  <div class="grid">
+    <div>
+      <label for="weight">Weight (kg)</label>
+      <input type="number" id="weight" min="0" step="0.1" placeholder="e.g. 70">
+    </div>
+
+    <div>
+      <label for="splits">Splits per day</label>
+      <select id="splits">
+        <option value="1">1 time a day</option>
+        <option value="2">2 times a day</option>
+        <option value="3">3 times a day</option>
+        <option value="4">4 times a day</option>
+        <option value="5">5 times a day</option>
+        <option value="6" selected>6 times a day</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="wake">Wake time</label>
+      <input type="time" id="wake" value="07:00">
+    </div>
+
+    <div>
+      <label for="bed">Bed time</label>
+      <input type="time" id="bed" value="22:00">
+    </div>
+
+    <div>
+      <label for="gseCap">GSE capsule size (mg) <span class="muted">optional</span></label>
+      <input type="number" id="gseCap" min="0" step="1" placeholder="e.g. 500">
+    </div>
+
+    <div>
+      <label for="vitcCap">Vitamin C capsule size (mg) <span class="muted">optional</span></label>
+      <input type="number" id="vitcCap" min="0" step="1" placeholder="e.g. 500">
+    </div>
+
+    <div class="full">
+      <button type="button" onclick="calc()">Calculate</button>
+    </div>
+  </div>
+
+  <div class="result">
+    <h3>Grape Seed Extract</h3>
+    <div>Total: <strong><span id="gseT">0</span> mg</strong> (<span id="gseTG">0</span> g)</div>
+    <div>Per dose: <strong><span id="gseD">0</span> mg</strong> (<span id="gseDG">0</span> g)</div>
+    <div>Capsules per dose: <strong><span id="gseCaps">-</span></strong></div>
+  </div>
+
+  <div class="result">
+    <h3>Vitamin C</h3>
+    <div>Total: <strong><span id="vitcT">0</span> mg</strong> (<span id="vitcTG">0</span> g)</div>
+    <div>Per dose: <strong><span id="vitcD">0</span> mg</strong> (<span id="vitcDG">0</span> g)</div>
+    <div>Capsules per dose: <strong><span id="vitcCaps">-</span></strong></div>
+  </div>
+
+  <div class="result">
+    <h3>Suggested Schedule</h3>
+    <div class="muted">Evenly spaced between wake time and bed time.</div>
+    <ul id="schedule">
+      <li>Enter your values and press Calculate.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+function toMin(t) {
+  const parts = t.split(":");
+  return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+}
+
+function toTime(m) {
+  const minsInDay = 1440;
+  let value = ((Math.round(m) % minsInDay) + minsInDay) % minsInDay;
+  const h = Math.floor(value / 60);
+  const min = value % 60;
+  return String(h).padStart(2, "0") + ":" + String(min).padStart(2, "0");
+}
+
+function calc() {
+  const weightEl = document.getElementById("weight");
+  const splitsEl = document.getElementById("splits");
+  const wakeEl = document.getElementById("wake");
+  const bedEl = document.getElementById("bed");
+  const gseCapEl = document.getElementById("gseCap");
+  const vitcCapEl = document.getElementById("vitcCap");
+
+  const weight = parseFloat(weightEl.value);
+  const splits = parseInt(splitsEl.value, 10);
+  const wakeVal = wakeEl.value;
+  const bedVal = bedEl.value;
+  const gseCapVal = parseFloat(gseCapEl.value);
+  const vitcCapVal = parseFloat(vitcCapEl.value);
+
+  if (isNaN(weight) || weight <= 0) {
+    alert("Please enter a valid weight in kg.");
+    return;
+  }
+
+  if (!wakeVal || !bedVal) {
+    alert("Please enter both wake time and bed time.");
+    return;
+  }
+
+  let wake = toMin(wakeVal);
+  let bed = toMin(bedVal);
+
+  if (bed <= wake) {
+    bed += 1440;
+  }
+
+  const gse = weight * 200;
+  const vitc = weight * 50;
+  const gseDose = gse / splits;
+  const vitcDose = vitc / splits;
+
+  document.getElementById("gseT").textContent = gse.toFixed(2);
+  document.getElementById("gseTG").textContent = (gse / 1000).toFixed(3);
+  document.getElementById("gseD").textContent = gseDose.toFixed(2);
+  document.getElementById("gseDG").textContent = (gseDose / 1000).toFixed(3);
+
+  document.getElementById("vitcT").textContent = vitc.toFixed(2);
+  document.getElementById("vitcTG").textContent = (vitc / 1000).toFixed(3);
+  document.getElementById("vitcD").textContent = vitcDose.toFixed(2);
+  document.getElementById("vitcDG").textContent = (vitcDose / 1000).toFixed(3);
+
+  document.getElementById("gseCaps").textContent =
+    (!isNaN(gseCapVal) && gseCapVal > 0) ? ((gseDose / gseCapVal).toFixed(2) + " capsules") : "-";
+
+  document.getElementById("vitcCaps").textContent =
+    (!isNaN(vitcCapVal) && vitcCapVal > 0) ? ((vitcDose / vitcCapVal).toFixed(2) + " capsules") : "-";
+
+  const schedule = document.getElementById("schedule");
+  schedule.innerHTML = "";
+
+  if (splits === 1) {
+    const li = document.createElement("li");
+    li.textContent = "Dose 1: " + toTime(wake + ((bed - wake) / 2));
+    schedule.appendChild(li);
+    return;
+  }
+
+  const step = (bed - wake) / (splits - 1);
+
+  for (let i = 0; i < splits; i++) {
+    const li = document.createElement("li");
+    li.textContent = "Dose " + (i + 1) + ": " + toTime(wake + (step * i));
+    schedule.appendChild(li);
+  }
+}
+</script>
+
+</body>
+</html>
